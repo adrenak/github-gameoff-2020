@@ -49,11 +49,18 @@ namespace FLFlight
 
         private void SetStickCommandsUsingAutopilot()
         {
+            var active = new Vector2(Screen.width, Screen.height);
+            var target = new Vector2(Camera.main.targetTexture.width, Camera.main.targetTexture.height);
+            var scale = new Vector2(active.x / target.x, active.y / target.y);
             // Project the position of the mouse on screen out to some distance.
             Vector3 mousePos = Input.mousePosition;
-            mousePos.z = 1000f;
-            Vector3 gotoPos = Camera.main.ScreenToWorldPoint(mousePos);
 
+            mousePos = new Vector3(
+                mousePos.x / scale.x,
+                mousePos.y / scale.y,
+                1000
+            );
+            Vector3 gotoPos = Camera.main.ScreenToWorldPoint(mousePos);
             // Use that world position under the mouse as a target point.
             TurnTowardsPoint(gotoPos);
 
@@ -85,7 +92,10 @@ namespace FLFlight
 
             // Figure out most position relative to center of screen.
             // 0 is center, 1 is right, -1 is left.
-            float bankInfluence = (mousePos.x - (Screen.width * 0.5f)) / (Screen.width * 0.5f);
+            var active = new Vector2(Screen.width, Screen.height);
+            var target = new Vector2(Camera.main.targetTexture.width, Camera.main.targetTexture.height);
+            var scale = new Vector2(active.x / target.x, active.y / target.y);
+            float bankInfluence = (mousePos.x - (active.x / scale.x * 0.5f)) / (active.x / scale.x * 0.5f);
             bankInfluence = Mathf.Clamp(bankInfluence, -1f, 1f);
 
             // Throttle modifies the bank angle so that when at idle, the ship just flatly yaws.
@@ -111,7 +121,6 @@ namespace FLFlight
         private void TurnTowardsPoint(Vector3 gotoPos)
         {
             Vector3 localGotoPos = transform.InverseTransformVector(gotoPos - transform.position).normalized;
-
             // Note that you would want to use a PID controller for this to make it more responsive.
             pitch = Mathf.Clamp(-localGotoPos.y * pitchSensitivity, -1f, 1f);
             yaw = Mathf.Clamp(localGotoPos.x * yawSensitivity, -1f, 1f);
